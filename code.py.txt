@@ -1,0 +1,16 @@
+import requests
+from bs4 import BeautifulSoup
+
+# Send a request to the Hacker News homepage and get its HTML content
+url = 'https://news.ycombinator.com'
+res = requests.get(url)
+html = res.text
+
+soup = BeautifulSoup(html, 'html.parser')
+
+articles = soup.select('a.storylink')
+
+for i, article in enumerate(articles[:20]):
+    title = article.text
+    link = article['href']
+    print(f"{i+1}. {article.text.strip()}")
