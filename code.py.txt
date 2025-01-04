@@ -1,16 +1,45 @@
 import requests
 from bs4 import BeautifulSoup
 
-# Send a request to the Hacker News homepage and get its HTML content
-url = 'https://news.ycombinator.com'
-res = requests.get(url)
-html = res.text
+def get_top_hacker_news_articles():
+    url = "https://news.ycombinator.com/"
+    response = requests.get(url)
 
-soup = BeautifulSoup(html, 'html.parser')
+    # Check if the request was successful
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch Hacker News homepage: {response.status_code}")
 
-articles = soup.select('a.storylink')
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-for i, article in enumerate(articles[:20]):
-    title = article.text
-    link = article['href']
-    print(f"{i+1}. {article.text.strip()}")
+    # Find all article titles and links
+    articles = soup.select(".storylink")
+    subtexts = soup.select(".subtext")
+
+    top_articles = []
+    for i, (article, subtext) in enumerate(zip(articles, subtexts)):
+        if i >= 20:
+            break
+
+        title = article.get_text()
+        link = article.get('href', 'No link provided')
+        points = subtext.select_one(".score")
+        points = int(points.get_text().split()[0]) if points else 0
+        top_articles.append({
+            "rank": i + 1,
+            "title": title,
+            "link": link,
+            "points": points
+        })
+
+    return top_articles
+
+# Main Execution
+if __name__ == "__main__":
+    try:
+        top_articles = get_top_hacker_news_articles()
+        print("Top 20 Hacker News Articles:")
+        for article in top_articles:
+            print(f"{article['rank']}. {article['title']} ({article['points']} points)")
+            print(f"   Link: {article['link']}")
+    except Exception as e:
+        print(f"Error: {e}")
